@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+  <title>Ala-Air Travel & Tours | Tour Packages Gallery</title>
+  <!-- Leaflet CSS for interactive map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Font Awesome for mobile menu icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+
+    body { background:#f4f7ff; color:#222; overflow-x:hidden; }
+
+    :root {
+      --blue:#0f4cbd;
+      --dark-blue:#072b72;
+      --orange:#e84c0e;
+      --green:#1a8a3c;
+      --yellow:#ffcc33;
+      --white:#ffffff;
+      --light:#eef4ff;
+    }
+
+    /* NAVBAR */
+    nav {
+      width:100%; padding:14px 5%;
+      display:flex; justify-content:space-between; align-items:center;
+      position:fixed; top:0; z-index:200;
+      transition:background 0.4s, box-shadow 0.4s;
+      background: transparent;
+      flex-wrap: wrap;
+    }
+    nav.scrolled {
+      background:rgba(7,43,114,0.97);
+      box-shadow:0 4px 30px rgba(0,0,0,0.3);
+      backdrop-filter:blur(12px);
+    }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; flex-shrink:0; }
+    .logo-img { width:44px; height:auto; border-radius:14px; object-fit:cover; box-shadow:0 10px 24px rgba(0,0,0,0.18); }
+    .logo-text { font-size:clamp(20px,5vw,26px); font-weight:900; color:white; letter-spacing:-0.5px; }
+    .logo-text span { color:var(--orange); }
+    .logo-tag { font-size:8px; color:rgba(255,255,255,0.75); font-style:italic; }
+    
+    /* Desktop Navigation */
+    .nav-menu {
+      display: flex;
+      gap: clamp(20px,3vw,40px);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .nav-menu li a { 
+      text-decoration:none; 
+      color: white !important; 
+      font-weight:500; 
+      font-size:clamp(14px,3.5vw,16px); 
+      transition:0.3s;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .nav-menu li a:hover { color:var(--yellow) !important; }
+    
+    /* Mobile Menu Toggle Button */
+    .menu-toggle {
+      display: none;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px 14px;
+      border-radius: 40px;
+      backdrop-filter: blur(4px);
+    }
+    
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    
+    .btn {
+      background:linear-gradient(45deg,var(--orange),#c43b00);
+      color:white; padding:8px 18px; border:none; border-radius:50px;
+      font-weight:700; font-size:clamp(12px,3vw,14px); cursor:pointer; transition:0.3s;
+      box-shadow:0 6px 20px rgba(232,76,14,0.35);
+      white-space:nowrap;
+    }
+    .btn-small { padding:6px 14px; font-size:clamp(11px,2.8vw,13px); }
+    .btn-login { background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.3); }
+    .btn-login:hover { background: white; color: var(--dark-blue); }
+    .btn-register { background: linear-gradient(45deg, var(--yellow), #e6b800); color: var(--dark-blue); }
+    .user-greeting { display: flex; align-items: center; gap: 8px; background: rgba(255,255,240,0.2); padding: 4px 12px 4px 16px; border-radius: 60px; backdrop-filter: blur(4px); }
+    .user-greeting span { color: white; font-weight: 600; font-size: clamp(11px,3vw,13px); }
+    .logout-btn { background: rgba(0,0,0,0.2); border: none; padding: 4px 10px; border-radius: 40px; color: white; font-size: 11px; cursor: pointer; }
+    .logout-btn:hover { background: var(--orange); }
+
+    /* Mobile Responsive */
+    @media (max-width: 850px) {
+      .menu-toggle {
+        display: block;
+        order: 2;
+      }
+      .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: -280px;
+        width: 280px;
+        height: calc(100vh - 70px);
+        background: rgba(7,43,114,0.98);
+        backdrop-filter: blur(16px);
+        flex-direction: column;
+        padding: 30px 25px;
+        gap: 20px;
+        transition: left 0.3s ease-in-out;
+        z-index: 199;
+        border-radius: 0 24px 24px 0;
+        box-shadow: 8px 0 30px rgba(0,0,0,0.3);
+      }
+      .nav-menu.active {
+        left: 0;
+      }
+      .nav-menu li a {
+        font-size: 18px;
+        display: block;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+      }
+      .logo { order: 1; }
+      .nav-actions { order: 3; }
+    }
+
+    @media (max-width: 550px) {
+      nav { padding: 12px 4%; }
+      .nav-actions { gap: 8px; }
+      .btn-small { padding: 5px 10px; font-size: 11px; }
+      .user-greeting { padding: 3px 8px 3px 12px; }
+    }
+
+    /* HERO - FULLY RESPONSIVE (FIXED for mobile address bars) */
+    .hero { 
+      width:100%; 
+      min-height: 100vh;      /* fallback */
+      min-height: 100svh;     /* modern: small viewport height, avoids address bar issues */
+      position:relative; 
+      overflow:hidden; 
+      display:flex; 
+      flex-direction:column; 
+      justify-content:flex-end; 
+      background: #072b72; /* fallback color while image loads */
+    }
+    /* For extra safety on older browsers */
+    @supports not (min-height: 100svh) {
+      .hero { min-height: 100vh; }
+    }
+    .hero-img { 
+      position:absolute; 
+      inset:0; 
+      width:100%; 
+      height:100%; 
+      object-fit:cover; 
+      object-position:center center; 
+    }
+    .hero-overlay { 
+      position:absolute; 
+      inset:0; 
+      background:linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.05) 50%, rgba(7,43,114,0.88) 100%); 
+    }
+    .hero-bar { 
+      position:relative; 
+      z-index:2; 
+      background:rgba(7,43,114,0.97); 
+      padding:20px 5%; 
+      display:flex; 
+      align-items:center; 
+      justify-content:space-between; 
+      flex-wrap:wrap; 
+      gap:16px; 
+      border-top:4px solid var(--orange); 
+    }
+    .hero-tagline { font-size:clamp(18px,5vw,32px); font-weight:800; font-style:italic; color:white; }
+    .hero-tagline span { color:var(--yellow); }
+    .hero-contacts { display:flex; gap:clamp(12px,4vw,28px); flex-wrap:wrap; align-items:center; row-gap:8px; }
+    .hero-contact-item { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.85); font-size:clamp(10px,3vw,13.5px); flex-wrap:wrap; }
+    .hero-contact-item a { color:white; text-decoration:none; }
+    
+    /* SERVICES STRIP */
+    .services-strip { background:white; padding:20px 5%; display:flex; flex-wrap:wrap; gap:10px; border-bottom:3px solid #e8eeff; justify-content:center; }
+    .service-pill { flex:1 1 150px; min-width:130px; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; cursor:pointer; transition:0.3s; background:#fafcff; }
+    .service-pill:hover { background:var(--light); transform:translateY(-3px); }
+    .sp-icon { width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; background:#eef4ff; flex-shrink:0; }
+    .sp-label { font-size:clamp(11px,3.5vw,14px); font-weight:700; color:var(--dark-blue); }
+    .sp-sub { font-size:9px; color:#888; }
+
+    /* SECTIONS */
+    .section { padding:60px 5%; }
+    .section-title { text-align:center; margin-bottom:40px; }
+    .section-title h2 { font-size:clamp(28px,7vw,48px); color:var(--dark-blue); margin-bottom:12px; font-weight:800; }
+    .section-title h2 span { color:var(--orange); }
+    .section-title p { color:#666; font-size:clamp(13px,3.5vw,16px); }
+    
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+    .card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); transition: all 0.3s ease; cursor: pointer; }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 25px 45px rgba(15,76,189,0.2); }
+    .card-img { width: 100%; height: 220px; object-fit: cover; display: block; }
+    .card-content { padding: 20px; }
+    .card-content h3 { font-size: clamp(18px,5vw,22px); color: var(--dark-blue); font-weight: 800; }
+    .card-content p { color: #666; font-size: clamp(12px,3.2vw,14px); line-height: 1.5; margin-bottom: 12px; }
+    .price { color: var(--orange); font-size: clamp(22px,5vw,28px); font-weight: 800; margin: 8px 0; }
+    .card-btn { background: var(--light); color: var(--blue); padding: 10px; border-radius: 40px; font-weight: 700; border: none; cursor: pointer; width: 100%; }
+    .card-btn:hover { background: var(--blue); color: white; }
+    
+    .expand-hint { font-size: 11px; color: #aaa; text-align: center; margin-top: 12px; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    
+    /* Promo */
+    .promo { background:linear-gradient(135deg,var(--blue),var(--dark-blue)); border-radius:28px; padding:clamp(30px,7vw,65px); color:white; text-align:center; margin:0 5%; }
+    .promo h2 { font-size:clamp(24px,6vw,42px); margin-bottom:15px; }
+    
+    /* About */
+    .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:clamp(20px,5vw,70px); align-items:center; }
+    @media (max-width: 780px) { .about-grid { grid-template-columns:1fr; } }
+    .about-img { width:100%; border-radius:28px; box-shadow:0 20px 30px rgba(0,0,0,0.1); }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:20px; }
+    .stats div strong { font-size:clamp(22px,5vw,28px); color:var(--blue); display:block; }
+    
+    /* Contact */
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(20px,5vw,55px); align-items: start; }
+    @media (max-width: 880px) { .contact-grid { grid-template-columns: 1fr; gap: 40px; } }
+    .contact-info .label { display: inline-block; background: linear-gradient(45deg, var(--orange), #c43b00); color: white; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 40px; margin-bottom: 15px; }
+    .contact-info h2 { font-size: clamp(24px,5vw,42px); color: var(--dark-blue); font-weight: 800; }
+    .contact-details { display: flex; flex-direction: column; gap: 18px; margin-top: 25px; }
+    .contact-item { display: flex; align-items: center; gap: 14px; flex-wrap:wrap; }
+    .contact-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--blue), var(--dark-blue)); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; flex-shrink:0; }
+    .contact-form { background: white; border-radius: 28px; padding: clamp(20px,5vw,42px); box-shadow: 0 18px 55px rgba(15,76,189,0.1); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 540px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 16px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 2px solid #e8eeff; border-radius: 18px; background: #f9faff; font-size: 14px; }
+    .form-submit { width: 100%; padding: 14px; margin-top: 8px; border-radius: 50px; }
+    .success-msg { display: none; background: #e8fff3; border-radius: 16px; padding: 14px; text-align: center; margin-top: 18px; color: #1b7a50; font-weight: 600; }
+    
+    /* Map */
+    .map-wrap { margin-top: 40px; border-radius: 24px; overflow: hidden; height: clamp(260px, 40vw, 380px); position: relative; }
+    #alaairMap { width: 100%; height: 100%; }
+    .map-pin-overlay { position: absolute; bottom: 12px; left: 12px; background: rgba(7,43,114,0.9); backdrop-filter: blur(8px); border-radius: 40px; padding: 6px 14px; display: flex; align-items: center; gap: 8px; color: white; font-size: 12px; z-index: 10; pointer-events: none; }
+    
+    /* Footer */
+    footer { background: var(--dark-blue); color: white; padding: 45px 5% 25px; margin-top: 20px; }
+    .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 35px; }
+    .footer-col h4 { font-size: 15px; margin-bottom: 15px; text-transform: uppercase; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col ul li a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; transition: 0.2s; cursor: pointer; }
+    .footer-col ul li a:hover { color: var(--yellow); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 20px; font-size: 12px; text-align:center; }
+    
+    /* Lightbox */
+    .lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px); z-index: 2000; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; cursor: pointer; }
+    .lightbox.active { visibility: visible; opacity: 1; }
+    .lightbox-content { max-width: 90vw; max-height: 85vh; text-align: center; }
+    .lightbox-img { max-width: 100%; max-height: 70vh; border-radius: 20px; border: 3px solid rgba(255,255,255,0.2); }
+    .lightbox-caption { margin-top: 15px; color: white; font-size: clamp(14px,4vw,18px); background: rgba(0,0,0,0.6); padding: 6px 18px; border-radius: 60px; display: inline-block; }
+    .close-lightbox { position: absolute; top: 20px; right: 25px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; }
+    .lightbox-nav { position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 15px; }
+    .nav-btn { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; padding: 6px 18px; border-radius: 40px; cursor: pointer; }
+    
+    /* Auth Modal */
+    .modal-backdrop { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:1000; display:flex; align-items:center; justify-content:center; visibility:hidden; opacity:0; transition:0.2s; }
+    .auth-modal-inner { background:white; max-width:520px; width:90%; border-radius:32px; padding:28px 20px; max-height:90vh; overflow-y:auto; }
+    .reg-fields-group { display: flex; flex-direction: column; gap: 12px; }
+    .form-group-sm input, .form-group-sm textarea { width:100%; padding:10px 12px; border:2px solid #e2e8ff; border-radius:16px; font-size:14px; }
+    
+    .reveal { opacity: 0; transform: translateY(25px); transition: 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .success-toast { position:fixed; bottom:20px; right:20px; background:#1a8a3c; color:white; padding:10px 20px; border-radius:50px; opacity:0; transition:0.3s; z-index:2001; font-size:14px; }
+    
+    nav, nav * , .hero-bar, .hero-bar * { color: #ffffff !important; }
+  </style>
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="#" class="logo" id="logoLink">
+    <img class="logo-img" src="logo.jpg" alt="Ala-Air Travel & Tours logo">
+    <div>
+      <div class="logo-text">Ala<span>Air</span></div>
+      <div class="logo-tag">Ala eh, tara bumyahe!</div>
+    </div>
+  </a>
+  
+  <!-- Hamburger Menu Button (mobile) -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+  
+  <!-- Navigation Links -->
+  <ul class="nav-menu" id="navMenu">
+    <li><a href="#home" class="nav-link">Home</a></li>
+    <li><a href="#packages" class="nav-link">Packages</a></li>
+    <li><a href="#about" class="nav-link">About Us</a></li>
+    <li><a href="#contact" class="nav-link">Contact</a></li>
+  </ul>
+  
+  <div class="nav-actions" id="navActions"></div>
+</nav>
+
+<!-- Hero Section with id="home" - FULLY RESPONSIVE NOW -->
+<section class="hero" id="home">
+  <img class="hero-img" src="landing.jpg" alt="Ala-Air Travel" />
+  <div class="hero-overlay"></div>
+  <div class="hero-bar">
+    <div class="hero-tagline"><span>Ala eh,</span> tara bumyahe!</div>
+    <div class="hero-contacts">
+      <div class="hero-contact-item"><span>📍</span><div>Cacai's Kumintang Ilaya,<br>Batangas City</div></div>
+      <div class="hero-contact-item"><span>📞</span><a href="tel:+639499330769">+63 949 933 0769</a></div>
+      <div class="hero-contact-item"><span>✉️</span><a href="mailto:alaairtravelandtour@gmail.com">alaairtravelandtour@gmail.com</a></div>
+      <div class="hero-contact-item"><span>🌐</span><a href="#">www.alaairtravel.com</a></div>
+    </div>
+    <button class="btn" onclick="document.getElementById('packages').scrollIntoView({behavior:'smooth'})">Explore Packages ✈</button>
+  </div>
+</section>
+
+<!-- Services Strip -->
+<div class="services-strip">
+  <div class="service-pill"><div class="sp-icon">✈️</div><div><div class="sp-label">Flights</div><div class="sp-sub">Domestic & International</div></div></div>
+  <div class="service-pill"><div class="sp-icon">🏨</div><div><div class="sp-label">Hotels</div><div class="sp-sub">Best rates</div></div></div>
+  <div class="service-pill"><div class="sp-icon">🌴</div><div><div class="sp-label">Tours</div><div class="sp-sub">Group & private</div></div></div>
+  <div class="service-pill"><div class="sp-icon">🚌</div><div><div class="sp-label">Transfers</div><div class="sp-sub">Airport & city</div></div></div>
+  <div class="service-pill"><div class="sp-icon">🛂</div><div><div class="sp-label">Visa Assistance</div><div class="sp-sub">Hassle-free</div></div></div>
+</div>
+
+<!-- Tour Packages Section -->
+<section class="section" id="packages">
+  <div class="section-title reveal">
+    <h2>TOUR <span>PACKAGES</span></h2>
+    <p>Click any image to expand & view full details — See all our exclusive offers</p>
+  </div>
+  <div class="cards" id="packagesContainer"></div>
+  <div class="expand-hint reveal">
+    <span>🖱️✨</span> Click on any image or package card to see it fullscreen <span>✨🖱️</span>
+  </div>
+</section>
+
+<!-- Promo -->
+<section class="section"><div class="promo reveal"><h2>Collect Moments,<br><span>Cherish Forever.</span></h2><p>Book your dream vacation package today and create unforgettable memories with Ala-Air.</p><button class="btn" onclick="document.getElementById('packages').scrollIntoView({behavior:'smooth'})">View All Packages ✈</button></div></section>
+
+<!-- About Section -->
+<section class="section" id="about">
+  <div class="about-grid">
+    <div class="reveal"><img class="about-img" src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1000&auto=format" alt="About"></div>
+    <div class="reveal"><span class="label" style="background:var(--light); color:var(--blue);">✈ About Us</span><h2>Your Trusted Travel <span>Partner</span> in Batangas</h2><p>Ala-Air Travel & Tours is a Batangas City-based agency dedicated to affordable, personalized travel packages across Asia. From solo adventures to group tours, we make every journey seamless.</p><div class="stats"><div><strong>12K+</strong><br>Happy Travelers</div><div><strong>50+</strong><br>Destinations</div><div><strong>98%</strong><br>Satisfaction</div></div></div>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section class="section" id="contact">
+  <div class="section-title reveal"><h2>Contact <span>Us</span></h2><p>Ready to book your package? Reach out — we're here to help!</p></div>
+  <div class="contact-grid">
+    <div class="contact-info reveal">
+      <span class="label">📩 Get In Touch</span>
+      <h2>Let's Plan Your <span>Dream Package</span></h2>
+      <p>Our Batangas City team is available Monday to Saturday.</p>
+      <div class="contact-details">
+        <div class="contact-item"><div class="contact-icon">📍</div><div><h4>Our Office</h4><p>Cacai's Kumintang Ilaya, Batangas City, Philippines</p></div></div>
+        <div class="contact-item"><div class="contact-icon">📞</div><div><h4>Phone / Viber</h4><p><a href="tel:+639499330769">+63 949 933 0769</a></p></div></div>
+        <div class="contact-item"><div class="contact-icon">✉️</div><div><h4>Email</h4><p><a href="mailto:alaairtravelandtour@gmail.com">alaairtravelandtour@gmail.com</a></p></div></div>
+        <div class="contact-item"><div class="contact-icon">🕐</div><div><h4>Office Hours</h4><p>Mon–Sat: 8am – 7pm</p></div></div>
+      </div>
+    </div>
+    <div class="contact-form reveal">
+      <h3>Inquire about a Package ✈</h3>
+      <div class="form-row">
+        <div class="form-group"><label>First Name *</label><input type="text" id="contactFname" placeholder="Juan"></div>
+        <div class="form-group"><label>Last Name</label><input type="text" id="contactLname" placeholder="Dela Cruz"></div>
+      </div>
+      <div class="form-group"><label>Email Address *</label><input type="email" id="contactEmail" placeholder="juan@example.com"></div>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="contactPhone" placeholder="+63 9XX XXX XXXX"></div>
+      <div class="form-group"><label>Interested Package</label>
+        <select id="contactService"><option value="">— Select a package —</option><option>Taipei Adventure</option><option>Thailand Thai-lights</option><option>Golden Greece Escape</option><option>Cebu City Gateway</option><option>Ilocos Heritage Tour</option><option>ALBAYtastic</option></select>
+      </div>
+      <div class="form-group"><label>Your Message *</label><textarea id="contactMsg" rows="3" placeholder="Travel dates, # of travelers..."></textarea></div>
+      <button class="btn form-submit" id="sendContactBtn">Send Inquiry ✈</button>
+      <div class="success-msg" id="contactSuccessMsg">✅ Thank you! We'll reply soon. Tara na, biyahe tayo! 🌏</div>
+    </div>
+  </div>
+  
+  <!-- Interactive Map -->
+  <div class="map-wrap reveal">
+    <div id="alaairMap"></div>
+    <div class="map-pin-overlay">
+      <div class="pin">📍</div>
+      <p>Ala-Air Travel & Tours · Kumintang Ilaya, Batangas City</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand"><div class="logo-text">Ala<span style="color:var(--orange)">Air</span></div><div class="tagline-f" style="color:var(--yellow);">Ala eh, tara bumyahe!</div><p>Your trusted Batangas-based travel partner.</p></div>
+    <div class="footer-col"><h4>Quick Links</h4><ul><li><a href="#home" class="footer-link">Home</a></li><li><a href="#packages" class="footer-link">Packages</a></li><li><a href="#about" class="footer-link">About</a></li><li><a href="#contact" class="footer-link">Contact</a></li></ul></div>
+    <div class="footer-col"><h4>Our Packages</h4><ul><li><a href="#packages" class="footer-link">Taipei</a></li><li><a href="#packages" class="footer-link">Thailand</a></li><li><a href="#packages" class="footer-link">Cebu</a></li><li><a href="#packages" class="footer-link">Ilocos</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+639499330769">+63 949 933 0769</a></li><li><a href="mailto:alaairtravelandtour@gmail.com">alaairtravelandtour@gmail.com</a></li></ul></div>
+  </div>
+  <div class="footer-bottom"><p>© 2026 Ala-Air Travel & Tours. All Rights Reserved.</p></div>
+</footer>
+
+<!-- Lightbox Modal -->
+<div class="lightbox" id="lightboxModal">
+  <button class="close-lightbox" id="closeLightboxBtn">&times;</button>
+  <div class="lightbox-content">
+    <img class="lightbox-img" id="lightboxImage" alt="Expanded view">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+  <div class="lightbox-nav">
+    <button class="nav-btn" id="prevImageBtn">◀ Prev</button>
+    <button class="nav-btn" id="nextImageBtn">Next ▶</button>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal-backdrop" id="authModal">
+  <div class="auth-modal-inner">
+    <h3 id="modalTitle" style="font-size:26px; font-weight:800; margin-bottom:16px;">Login</h3>
+    <div id="authError" style="color:#d14545; display:none;"></div>
+    <input type="email" id="authEmail" placeholder="Email Address" style="width:100%; padding:12px; margin:8px 0; border-radius:20px; border:2px solid #e2e8ff;">
+    <input type="password" id="authPassword" placeholder="Password" style="width:100%; padding:12px; margin:8px 0; border-radius:20px; border:2px solid #e2e8ff;">
+    <div id="registerExtraFields" style="display:none; margin-top:15px;">
+      <div class="reg-fields-group">
+        <div class="form-group-sm"><input type="text" id="regFullname" placeholder="Full Name *"></div>
+        <div class="form-group-sm"><input type="tel" id="regPhone" placeholder="Phone Number"></div>
+        <div class="form-group-sm"><input type="text" id="regAddress" placeholder="Complete Address *"></div>
+        <div class="form-group-sm"><textarea id="regBio" rows="2" placeholder="Travel interests (Optional)"></textarea></div>
+      </div>
+    </div>
+    <button id="authActionBtn" style="background:linear-gradient(45deg,var(--blue),var(--dark-blue)); color:white; width:100%; padding:14px; border-radius:40px; font-weight:700; margin-top:16px;">Login</button>
+    <div class="toggle-auth" style="margin-top:18px; text-align:center;">Don't have an account? <span id="toggleModeBtn" style="color:var(--orange); cursor:pointer; font-weight:600;">Register</span></div>
+    <button class="close-modal" style="margin-top:14px; background:#f0f2fa; border:none; padding:10px; border-radius:30px; width:100%; cursor:pointer;">Cancel</button>
+  </div>
+</div>
+<div class="success-toast" id="toastMsg"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // Packages Data
+  const packagesData = [
+    { name: "Taipei Adventure", price: "₱21,609", img: "taipei2.jfif", alt: "Taipei" },
+    { name: "Thailand Thai-lights", price: "₱26,119", img: "thailand2.jfif", alt: "Thailand" },
+    { name: "Paris of City Love", price: "₱111,369", img: "paris.jfif", alt: "Paris" },
+    { name: "Cebu City Gateway", price: "₱8,739", img: "cebu2.jfif", alt: "Cebu" },
+    { name: "Ilocos Heritage Tour", price: "₱5,209", img: "ilocos2.jfif", alt: "Ilocos" },
+    { name: "ALBAYtastic", price: "₱11,899", img: "albay2.jfif", alt: "Albay" }
+  ];
+
+  const container = document.getElementById('packagesContainer');
+  function renderPackages() {
+    container.innerHTML = '';
+    packagesData.forEach((pkg, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card reveal';
+      card.setAttribute('data-index', idx);
+      card.innerHTML = `
+        <img class="card-img" src="${pkg.img}" alt="${pkg.alt}" loading="lazy">
+        <div class="card-content">
+          <h3>${pkg.name}</h3>
+          <div class="price">${pkg.price}</div>
+          <button class="card-btn book-package-btn" data-pkg-name="${pkg.name}">Book This Package ✈</button>
+        </div>
+      `;
+      card.addEventListener('click', (e) => { if(!e.target.classList.contains('book-package-btn')) openLightbox(idx); });
+      card.querySelector('.book-package-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+        const select = document.getElementById('contactService');
+        if(select) for(let i=0;i<select.options.length;i++) if(select.options[i].text.includes(e.target.getAttribute('data-pkg-name'))) select.selectedIndex=i;
+      });
+      container.appendChild(card);
+    });
+    const obs = new IntersectionObserver((entries) => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  }
+
+  // Lightbox
+  let currentLightboxIndex = 0;
+  const lightbox = document.getElementById('lightboxModal');
+  const lightboxImg = document.getElementById('lightboxImage');
+  const lightboxCaption = document.getElementById('lightboxCaption');
+  function openLightbox(idx) { currentLightboxIndex = idx; updateLightbox(); lightbox.classList.add('active'); document.body.style.overflow = 'hidden'; }
+  function updateLightbox() { const pkg = packagesData[currentLightboxIndex]; lightboxImg.src = pkg.img; lightboxCaption.innerText = `${pkg.name} — ${pkg.price}`; }
+  function closeLightbox() { lightbox.classList.remove('active'); document.body.style.overflow = ''; }
+  document.getElementById('closeLightboxBtn')?.addEventListener('click', closeLightbox);
+  document.getElementById('prevImageBtn')?.addEventListener('click', () => { currentLightboxIndex = (currentLightboxIndex-1+packagesData.length)%packagesData.length; updateLightbox(); });
+  document.getElementById('nextImageBtn')?.addEventListener('click', () => { currentLightboxIndex = (currentLightboxIndex+1)%packagesData.length; updateLightbox(); });
+  lightbox?.addEventListener('click', (e) => { if(e.target === lightbox) closeLightbox(); });
+
+  // Auth System
+  let currentUser = null;
+  function showToast(msg) { const t = document.getElementById('toastMsg'); t.innerText = msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',3000); }
+  
+  function updateNavbarUI() {
+    const navActions = document.getElementById('navActions');
+    if(!navActions) return;
+    if(currentUser) {
+      navActions.innerHTML = `<div class="user-greeting"><span>✈️ Hi, ${currentUser.fullname.split(' ')[0]}!</span><button class="logout-btn" id="logoutBtn">Logout</button></div><button class="btn btn-small" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Book Now</button>`;
+      document.getElementById('logoutBtn')?.addEventListener('click', () => { currentUser = null; localStorage.removeItem('alaair_user'); updateNavbarUI(); showToast("Logged out."); });
+    } else {
+      navActions.innerHTML = `<button class="btn btn-small btn-login" id="openLoginBtn">Login</button><button class="btn btn-small btn-register" id="openRegisterBtn">Register</button><button class="btn btn-small" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Book Now</button>`;
+      document.getElementById('openLoginBtn')?.addEventListener('click', () => openAuthModal('login'));
+      document.getElementById('openRegisterBtn')?.addEventListener('click', () => openAuthModal('signup'));
+    }
+  }
+
+  const authModal = document.getElementById('authModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const authActionBtn = document.getElementById('authActionBtn');
+  const toggleModeBtn = document.getElementById('toggleModeBtn');
+  const registerExtraDiv = document.getElementById('registerExtraFields');
+
+  function openAuthModal(mode) {
+    if(mode === 'login') {
+      modalTitle.innerText = 'Login';
+      authActionBtn.innerText = 'Login';
+      registerExtraDiv.style.display = 'none';
+      toggleModeBtn.innerText = 'Register';
+      authModal.setAttribute('data-mode', 'login');
+    } else {
+      modalTitle.innerText = 'Register';
+      authActionBtn.innerText = 'Register';
+      registerExtraDiv.style.display = 'block';
+      toggleModeBtn.innerText = 'Login';
+      authModal.setAttribute('data-mode', 'signup');
+    }
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    if(document.getElementById('regFullname')) document.getElementById('regFullname').value = '';
+    if(document.getElementById('regAddress')) document.getElementById('regAddress').value = '';
+    authModal.style.visibility = 'visible';
+    authModal.style.opacity = '1';
+  }
+
+  document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', () => { authModal.style.visibility = 'hidden'; authModal.style.opacity = '0'; }));
+  toggleModeBtn.addEventListener('click', () => { const currentMode = authModal.getAttribute('data-mode'); openAuthModal(currentMode === 'login' ? 'signup' : 'login'); });
+
+  authActionBtn.addEventListener('click', () => {
+    const mode = authModal.getAttribute('data-mode');
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    if(!email || !password) { showToast('Email and password required'); return; }
+    if(mode === 'signup') {
+      const fullname = document.getElementById('regFullname')?.value.trim();
+      const address = document.getElementById('regAddress')?.value.trim();
+      if(!fullname || !address) { showToast('Full name and address are required'); return; }
+      if(!email.includes('@')) { showToast('Valid email required'); return; }
+      const newUser = { email, fullname, phone: document.getElementById('regPhone')?.value || '', address, password, bio: document.getElementById('regBio')?.value || '' };
+      localStorage.setItem('alaair_user', JSON.stringify(newUser));
+      currentUser = newUser;
+      showToast(`Welcome ${fullname.split(' ')[0]}! Registration successful.`);
+    } else {
+      const stored = localStorage.getItem('alaair_user');
+      if(stored) {
+        const userData = JSON.parse(stored);
+        if(userData.email === email && userData.password === password) {
+          currentUser = userData;
+          showToast(`Welcome back, ${userData.fullname.split(' ')[0]}!`);
+        } else { showToast('Invalid email or password'); return; }
+      } else { showToast('No account found. Please register first.'); return; }
+    }
+    updateNavbarUI();
+    authModal.style.visibility = 'hidden';
+    authModal.style.opacity = '0';
+  });
+
+  // Contact form handler
+  document.getElementById('sendContactBtn')?.addEventListener('click', () => {
+    const fname = document.getElementById('contactFname').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const msg = document.getElementById('contactMsg').value.trim();
+    if(!fname || !email || !msg) { alert("Please fill required fields."); return; }
+    if(!email.includes('@')) { alert("Valid email required."); return; }
+    document.getElementById('contactSuccessMsg').style.display = 'block';
+    document.getElementById('contactFname').value = ''; document.getElementById('contactLname').value = '';
+    document.getElementById('contactEmail').value = ''; document.getElementById('contactPhone').value = '';
+    document.getElementById('contactService').value = ''; document.getElementById('contactMsg').value = '';
+    setTimeout(() => document.getElementById('contactSuccessMsg').style.display = 'none', 5000);
+    showToast("Inquiry sent! We'll reply within 24h.");
+  });
+
+  // Scroll effect
+  window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60));
+  
+  // Mobile Menu Toggle
+  const menuToggle = document.getElementById('menuToggle');
+  const navMenu = document.getElementById('navMenu');
+  if(menuToggle) {
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navMenu.classList.toggle('active');
+    });
+    document.querySelectorAll('.nav-link, .footer-link').forEach(link => {
+      link.addEventListener('click', () => { navMenu.classList.remove('active'); });
+    });
+    document.addEventListener('click', (e) => {
+      if(navMenu.classList.contains('active') && !navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+        navMenu.classList.remove('active');
+      }
+    });
+  }
+
+  // Smooth scroll for all anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if(targetId === '#') return;
+      const target = document.querySelector(targetId);
+      if(target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  renderPackages();
+  updateNavbarUI();
+
+  // Leaflet Map with resize handling for full responsiveness
+  function initInteractiveMap() {
+    const map = L.map('alaairMap').setView([13.7563, 121.0583], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM & CartoDB', subdomains: 'abcd' }).addTo(map);
+    const customIcon = L.divIcon({ html: '<div style="background:#e84c0e; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); border:2px solid white;"><span style="color:white; font-size:18px;">📍</span></div>', iconSize: [30,30], popupAnchor: [0,-15] });
+    L.marker([13.7563, 121.0583], { icon: customIcon }).bindPopup('<b>Ala-Air Travel & Tours</b><br>Cacai\'s, Kumintang Ilaya<br>Batangas City, Philippines').openPopup().addTo(map);
+    L.circle([13.7563, 121.0583], { color: '#e84c0e', fillColor: '#ffcc33', fillOpacity: 0.15, radius: 200 }).addTo(map);
+    setTimeout(() => map.invalidateSize(), 100);
+    window.addEventListener('resize', () => map.invalidateSize());
+  }
+  if(document.getElementById('alaairMap')) initInteractiveMap();
+</script>
+</body>
+</html>
